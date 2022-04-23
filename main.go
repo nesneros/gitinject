@@ -8,11 +8,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/nesneros/gitinject/gitx"
+	"github.com/nesneros/gitinject/git"
 	"golang.org/x/mod/semver"
 )
 
-//go:generate go run main.go -cmd=gen
+//go:generate  go run github.com/nesneros/gitinject -cmd gen
 
 //go:embed .gitinject/*
 var gitInjectFs embed.FS
@@ -54,10 +54,10 @@ func usage() {
 
 func getGitInfo(repo string, fallback string) *gitInfo {
 	result := gitInfo{ver: fallback}
-	sha, err := gitx.GitSha(repo)
+	sha, err := git.GitSha(repo)
 	reportError(err)
 	result.sha = sha
-	tag, err := gitx.GitTag(repo)
+	tag, err := git.GitTag(repo)
 	if err == nil && semver.IsValid(tag) {
 		result.ver = tag
 	}
