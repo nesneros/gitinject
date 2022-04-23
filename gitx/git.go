@@ -17,7 +17,7 @@ func GitSha(repo string) (string, error) {
 }
 
 func GitTag(repo string) (string, error) {
-	return trim(execGit("-C", repo, "describe", "tags", "HEAD"))
+	return trim(execGit("-C", repo, "describe", "--tags", "HEAD"))
 }
 
 func trim(s string, err error) (string, error) {
