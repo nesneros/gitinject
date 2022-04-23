@@ -21,17 +21,17 @@ const (
 	genDirDefault = ".gitinject"
 )
 
-func readGitInfo(fs embed.FS, fallbackVer string) *gitInfo {
-	v, _ := fs.ReadFile("version")
+func readGitInfo(dirname string, fs embed.FS, fallbackVer string) *gitInfo {
+	v, _ := fs.ReadFile(dirname + "/version")
 	ver := string(v)
 	if ver == "" {
 		ver = fallbackVer
 	}
-	sha, _ := fs.ReadFile("sha")
+	sha, _ := fs.ReadFile(dirname + "/sha")
 	return &gitInfo{ver: ver, sha: string(sha)}
 }
 
-var GitInfo *gitInfo
+var GitInfo = &gitInfo{"<notset>", "<notset>"}
 
 func usageError(errMsg string) {
 	fmt.Fprintf(os.Stderr, "%s\n", errMsg)
@@ -71,7 +71,7 @@ type gitInfo struct {
 
 // Example how to resolve a revision into its commit counterpart
 func main() {
-	GitInfo = readGitInfo(gitInjectFs, "<dev>")
+	GitInfo = readGitInfo(genDirDefault, gitInjectFs, "<dev>")
 	cmd := flag.String("cmd", "help", "Command to execute")
 	repo := flag.String("repo", ".", "Git repository. Default to current directory")
 	genDir := flag.String("genDir", genDirDefault, "Directory to generate files with git info. Default is "+genDirDefault)
@@ -82,12 +82,14 @@ func main() {
 	switch *cmd {
 	case "help":
 		usage()
-	case "show":
-		gitInfo := getGitInfo(*repo, "<dev>")
-		fmt.Printf("sha: %s\nver: %s\n", gitInfo.sha, gitInfo.ver)
 	case "gen":
 		gitInfo := getGitInfo(*repo, "<dev>")
 		generate(gitInfo, *genDir)
+	case "show":
+		gitInfo := getGitInfo(*repo, "<dev>")
+		fmt.Printf("sha: %s\nver: %s\n", gitInfo.sha, gitInfo.ver)
+	case "init":
+
 	default:
 		usageError("Invalid command: " + *cmd)
 	}
