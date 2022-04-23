@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	_ "embed"
 	"flag"
 	"fmt"
@@ -13,11 +14,24 @@ import (
 
 //go:generate go run main.go -cmd=gen
 
-//go:embed .gitinject/version
-var Version string
+//go:embed .gitinject/*
+var gitInjectFs embed.FS
 
-//go:embed .gitinject/sha
-var GitSha string
+const (
+	genDirDefault = ".gitinject"
+)
+
+func readGitInfo(fs embed.FS, fallbackVer string) *gitInfo {
+	v, _ := fs.ReadFile("version")
+	ver := string(v)
+	if ver == "" {
+		ver = fallbackVer
+	}
+	sha, _ := fs.ReadFile("sha")
+	return &gitInfo{ver: ver, sha: string(sha)}
+}
+
+var GitInfo *gitInfo
 
 func usageError(errMsg string) {
 	fmt.Fprintf(os.Stderr, "%s\n", errMsg)
@@ -34,7 +48,7 @@ func reportError(err error) {
 
 func usage() {
 	out := flag.CommandLine.Output()
-	fmt.Fprintf(out, "Version: %s (sha: %s)\nUsage of %s:\n\nOptions:\n", Version, GitSha, os.Args[0])
+	fmt.Fprintf(out, "Version: %s (sha: %s)\nUsage of %s:\n\nOptions:\n", GitInfo.ver, GitInfo.sha, os.Args[0])
 	flag.PrintDefaults()
 }
 
@@ -55,16 +69,12 @@ type gitInfo struct {
 	sha string
 }
 
-const (
-	genDirDefault = ".gitinject"
-)
-
 // Example how to resolve a revision into its commit counterpart
 func main() {
+	GitInfo = readGitInfo(gitInjectFs, "<dev>")
 	cmd := flag.String("cmd", "help", "Command to execute")
 	repo := flag.String("repo", ".", "Git repository. Default to current directory")
 	genDir := flag.String("genDir", genDirDefault, "Directory to generate files with git info. Default is "+genDirDefault)
-	fallbackVer := flag.String("fallbackVer", "<dev>", "Fallback if no version can be obtained from a git tag")
 
 	flag.Usage = usage
 	flag.Parse()
@@ -73,10 +83,10 @@ func main() {
 	case "help":
 		usage()
 	case "show":
-		gitInfo := getGitInfo(*repo, *fallbackVer)
+		gitInfo := getGitInfo(*repo, "<dev>")
 		fmt.Printf("sha: %s\nver: %s\n", gitInfo.sha, gitInfo.ver)
 	case "gen":
-		gitInfo := getGitInfo(*repo, *fallbackVer)
+		gitInfo := getGitInfo(*repo, "<dev>")
 		generate(gitInfo, *genDir)
 	default:
 		usageError("Invalid command: " + *cmd)
