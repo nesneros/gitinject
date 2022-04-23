@@ -1,4 +1,5 @@
-.gitinject
+.gitinject/sha
+.gitinject/version
 
 # binary file
 gitinject
