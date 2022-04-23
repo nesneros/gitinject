@@ -11,6 +11,8 @@ import (
 	"golang.org/x/mod/semver"
 )
 
+//go:generate go run main.go -cmd=gen
+
 //go:embed .gitinject/version
 var Version string
 
@@ -32,7 +34,7 @@ func reportError(err error) {
 
 func usage() {
 	out := flag.CommandLine.Output()
-	fmt.Fprintf(out, "Version: %v, usage of %s:\n\nOptions:\n", "<dev>", os.Args[0])
+	fmt.Fprintf(out, "Version: %s (sha: %s)\nUsage of %s:\n\nOptions:\n", Version, GitSha, os.Args[0])
 	flag.PrintDefaults()
 }
 
